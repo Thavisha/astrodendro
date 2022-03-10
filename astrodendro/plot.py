@@ -110,7 +110,7 @@ class DendrogramPlotter(object):
             ax.margins(0.05)
             ax.autoscale_view(True, True, True)
 
-    def plot_contour(self, ax, structure=None, subtree=True, slice=None, **kwargs):
+    def plot_contour(self, ax, structure=None, subtree=True, slice=None, dim=None, transpose = False, **kwargs):
         """
         Plot a contour outlining all pixels in the dendrogram, or a specific.
         structure.
@@ -150,12 +150,27 @@ class DendrogramPlotter(object):
                 if slice is None:
                     peak_index = structure.get_peak(subtree=subtree)
                     slice = peak_index[0][0]
-                mask = mask[slice, :, :]
+                
+                #Edited by T.Dharmawardena 28/11/2021 to allow for slicing along any dimension instead of just the 1st dimension
+                if dim==0:
+                    mask = mask[slice, :, :]
+                elif dim==1:
+                    mask = mask[:, slice, :]
+                elif dim==2:
+                    if self.dendrogram.data.ndim==3:
+                        mask = mask[:, :, slice]
+                    else:
+                        raise IndexError("dim=2 only works for 3-dimensional arrays")
+                else:
+                    raise ValueError("dim must be 0,1,2 for a 3-dimensional cube")
+
 
         # fix a common mistake when trying to set the color of contours
         if 'color' in kwargs and 'colors' not in kwargs:
             kwargs['colors'] = kwargs['color']
 
+        if transpose:
+            mask = mask.T
         ax.contour(mask, levels=[0.5], **kwargs)
 
     def get_lines(self, structures=None, subtree=True, **kwargs):
